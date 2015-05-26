@@ -1,0 +1,13 @@
+{
+  "name": "webdavjs",
+  "version": "1.0.0",
+  "main": "src/webdav.js",
+  "ignore": [
+    ".jshintrc",
+    "**/*.txt"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
