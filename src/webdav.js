@@ -26,6 +26,10 @@ var WebDAV = {
     return this.request('PUT', url, {}, data, 'text', callback);
   },
 
+  MOVE:  function(url, destinationUrl, callback) {
+    return this.request('MOVE', url, {Destination: destinationUrl}, null, 'text', callback);
+  },
+
   request: function(verb, url, headers, data, type, callback) {
     var xhr = new XMLHttpRequest();
     xhr.withCredentials = this.useCredentials;
@@ -83,6 +87,7 @@ WebDAV.File = function(fs, href, prop) {
   this.size = -1;
   this.mtime = null;
 
+  this.href = href;
   this.url = fs.urlFor(href);
   this.name = fs.nameFor(this.url);
 
@@ -101,6 +106,19 @@ WebDAV.File.prototype.write = function(data, callback) {
 
 WebDAV.File.prototype.rm = function(callback) {
   return WebDAV.DELETE(this.url, callback);
+};
+
+WebDAV.File.prototype.mv = function(newHref, callback) {
+  var newUrl = this._fs.urlFor(newHref);
+  return WebDAV.MOVE(this.url, newUrl, callback);
+};
+
+WebDAV.File.prototype.rename = function(newName, callback) {
+  var lastDelimIndex = this.href.lastIndexOf('/');
+  var parentDir = this.href.substring(0, lastDelimIndex + 1);
+
+  var newHref = parentDir + newName;
+  return this.mv(newHref, callback);
 };
 
 WebDAV.File.prototype.propfind = function(callback) {
