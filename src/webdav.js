@@ -164,6 +164,8 @@
   // For requirejs
   if (window.define) {
     window.define(function (require, exports, module) {
+      "use strict";
+
       for (var key in WebDAV) {
         exports[key] = WebDAV[key];
       }
