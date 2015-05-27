@@ -1,5 +1,7 @@
 // A raw WebDAV interface
 var WebDAV = {
+  useCredentials: false,
+
   GET: function(url, callback) {
     return this.request('GET', url, {}, null, 'text', callback);
   },
@@ -22,6 +24,7 @@ var WebDAV = {
 
   request: function(verb, url, headers, data, type, callback) {
     var xhr = new XMLHttpRequest();
+    xhr.withCredentials = this.useCredentials;
     var body = function() {
       var b = xhr.responseText;
       if (type == 'xml') {
