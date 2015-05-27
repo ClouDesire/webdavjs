@@ -85,6 +85,10 @@ WebDAV.File = function(fs, href, prop) {
 
   this.url = fs.urlFor(href);
   this.name = fs.nameFor(this.url);
+
+  if (prop) {
+    this.setProps(prop);
+  }
 };
 
 WebDAV.File.prototype.read = function(callback) {
@@ -121,9 +125,11 @@ WebDAV.File.prototype.propfind = function(callback) {
 
 WebDAV.File.prototype.setProps = function(prop) {
   var ns = WebDAV.NS;
-  var resourceType = prop.getElementsByTagNameNS(ns, 'resourcetype')[0];
+  var resourcetype = prop.getElementsByTagNameNS(ns, 'resourcetype')[0];
+  var collection   = resourcetype.getElementsByTagNameNS(ns, 'collection')[0];
 
-  this.type = resourceType.firstChild.tagName.indexOf('collection') < 0 ? 'file' : 'dir';
+  // this.type = resourceType.firstChild.tagName.indexOf('collection') < 0 ? 'file' : 'dir';
+  this.type = collection ? 'dir' : 'file';
   this.size = parseInt(prop.getElementsByTagNameNS(ns, 'getcontentlength')[0].innerHTML);
   this.mtime = new Date(prop.getElementsByTagNameNS(ns, 'getlastmodified')[0].innerHTML);
 };
@@ -132,6 +138,8 @@ WebDAV.File.prototype.children = function(callback) {
   if (this.type !== 'dir') {
     throw new Error('children is only available on directories');
   }
+
+  var fs = this._fs;
 
   var childrenFunc = function(doc) {
     if(doc.children == null) {
@@ -147,17 +155,9 @@ WebDAV.File.prototype.children = function(callback) {
       href = href.replace(/\/$/, ''); // Strip trailing slash
       var propstat     = response.getElementsByTagNameNS(ns, 'propstat')[0];
       var prop         = propstat.getElementsByTagNameNS(ns, 'prop')[0];
-      var resourcetype = prop.getElementsByTagNameNS(ns, 'resourcetype')[0];
-      var collection   = resourcetype.getElementsByTagNameNS(ns, 'collection')[0];
 
-      var size         = parseInt(prop.getElementsByTagNameNS(ns, 'getcontentlength')[0].innerHTML);
-      var mtime        = new Date(prop.getElementsByTagNameNS(ns, 'getlastmodified')[0].innerHTML);
-
-      if(collection) {
-        result[i-1] = new fs.dir(href, size, mtime);
-      } else {
-        result[i-1] = new fs.file(href, size, mtime);
-      }
+      var f = new WebDAV.File(fs, href, prop);
+      result[i-1] = f;
     }
     return result;
   };
