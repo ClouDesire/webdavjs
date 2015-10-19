@@ -6,28 +6,28 @@ var WebDAV = {
   useCredentials: false,
   NS: 'DAV:',
 
-  GET: function(url, callback) {
-    return this.request('GET', url, {}, null, 'text', callback);
+  GET: function(url, callback, headers) {
+    return this.request('GET', url, merge_options(headers, {}), null, 'text', callback);
   },
 
-  PROPFIND: function(url, callback) {
-    return this.request('PROPFIND', url, {Depth: "1"}, null, 'xml', callback);
+  PROPFIND: function(url, callback, headers) {
+    return this.request('PROPFIND', url, merge_options(headers, {"Depth": "1"}), null, 'xml', callback);
   },
 
-  MKCOL: function(url, callback) {
-    return this.request('MKCOL', url, {}, null, 'text', callback);
+  MKCOL: function(url, callback, headers) {
+    return this.request('MKCOL', url, merge_options(headers, {}), null, 'text', callback);
   },
 
-  DELETE: function(url, callback) {
-    return this.request('DELETE', url, {}, null, 'text', callback);
+  DELETE: function(url, callback, headers) {
+    return this.request('DELETE', url, merge_options(headers, {}), null, 'text', callback);
   },
 
-  PUT: function(url, data, callback) {
-    return this.request('PUT', url, {}, data, 'text', callback);
+  PUT: function(url, data, callback, headers) {
+    return this.request('PUT', url, merge_options(headers, {}), data, 'text', callback);
   },
 
-  MOVE:  function(url, destinationUrl, callback) {
-    return this.request('MOVE', url, {Destination: destinationUrl}, null, 'text', callback);
+  MOVE:  function(url, destinationUrl, callback, headers) {
+    return this.request('MOVE', url, merge_options(headers, {Destination: destinationUrl}), null, 'text', callback);
   },
 
   request: function(verb, url, headers, data, type, callback) {
@@ -97,23 +97,28 @@ WebDAV.File = function(fs, href, prop) {
 };
 
 WebDAV.File.prototype.read = function(callback) {
-  return WebDAV.GET(this.url, callback);
+  var fs = this._fs;
+  return WebDAV.GET(this.url, callback, fs.headers);
 };
 
 WebDAV.File.prototype.write = function(data, callback) {
-  return WebDAV.PUT(this.url, data, callback);
+  var fs = this._fs;
+  return WebDAV.PUT(this.url, data, callback, fs.headers);
 };
 
 WebDAV.File.prototype.rm = function(callback) {
-  return WebDAV.DELETE(this.url, callback);
+  var fs = this._fs;
+  return WebDAV.DELETE(this.url, callback, fs.headers);
 };
 
 WebDAV.File.prototype.mv = function(newHref, callback) {
+  var fs = this._fs;
   var newUrl = this._fs.urlFor(newHref);
-  return WebDAV.MOVE(this.url, newUrl, callback);
+  return WebDAV.MOVE(this.url, newUrl, callback, fs.headers);
 };
 
 WebDAV.File.prototype.rename = function(newName, callback) {
+  var fs = this._fs;
   var lastDelimIndex = this.href.lastIndexOf('/');
   var parentDir = this.href.substring(0, lastDelimIndex + 1);
 
@@ -161,7 +166,7 @@ WebDAV.File.prototype.children = function(callback) {
 
   var childrenFunc = function(doc) {
     if(doc.children == null) {
-      throw('No such directory: ' + url);
+      throw('No such directory: ' + this.url);
     }
 
     var ns = WebDAV.NS;
@@ -183,9 +188,9 @@ WebDAV.File.prototype.children = function(callback) {
   if(callback) {
     WebDAV.PROPFIND(this.url, function(doc) {
       callback(childrenFunc(doc));
-    });
+    }, fs.headers);
   } else {
-    return childrenFunc(WebDAV.PROPFIND(this.url));
+    return childrenFunc(WebDAV.PROPFIND(this.url, undefined, fs.headers));
   }
 };
 
@@ -194,16 +199,17 @@ WebDAV.File.prototype.mkdir = function(callback) {
     throw new Error('mkdir is only available on directories');
   }
 
-  return WebDAV.MKCOL(this.url, callback);
+  return WebDAV.MKCOL(this.url, callback, fs.headers);
 };
 
 
 /**
  * @class WebDAV.Fs
  */
-WebDAV.Fs = function(rootUrl) {
+WebDAV.Fs = function(rootUrl, headers) {
   this.rootUrl = rootUrl;
   this.useCredentials = false;
+  this.headers = headers;
 };
 
 WebDAV.Fs.prototype.file = function(href) {
@@ -226,3 +232,9 @@ WebDAV.Fs.prototype.nameFor = function(url) {
   return url.replace(/.*\/(.*)/, '$1');
 };
 
+function merge_options(obj1,obj2){
+   var obj3 = {};
+   for (var attrname in obj1) { obj3[attrname] = obj1[attrname]; }
+   for (var attrname in obj2) { obj3[attrname] = obj2[attrname]; }
+   return obj3;
+}
