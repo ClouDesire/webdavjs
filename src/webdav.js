@@ -153,7 +153,8 @@ WebDAV.File.prototype.setProps = function(prop) {
 
   // this.type = resourceType.firstChild.tagName.indexOf('collection') < 0 ? 'file' : 'dir';
   this.type = collection ? 'dir' : 'file';
-  //this.size = parseInt(prop.getElementsByTagNameNS(ns, 'getcontentlength')[0].innerHTML);
+  if(this.type === 'file')
+    this.size = parseInt(prop.getElementsByTagNameNS(ns, 'getcontentlength')[0].innerHTML);
   this.mtime = new Date(prop.getElementsByTagNameNS(ns, 'getlastmodified')[0].innerHTML);
 };
 
