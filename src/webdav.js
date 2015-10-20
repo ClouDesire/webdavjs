@@ -7,27 +7,27 @@ var WebDAV = {
   NS: 'DAV:',
 
   GET: function(url, callback, headers) {
-    return this.request('GET', url, merge_options(headers, {}), null, 'text', callback);
+    return this.request('GET', url, merge_options(headers, {}), null, 'text/xml; charset=UTF-8', callback);
   },
 
   PROPFIND: function(url, callback, headers) {
-    return this.request('PROPFIND', url, merge_options(headers, {"Depth": "1"}), null, 'xml', callback);
+    return this.request('PROPFIND', url, merge_options(headers, {"Depth": "1"}), null, 'text/xml; charset=UTF-8', callback);
   },
 
   MKCOL: function(url, callback, headers) {
-    return this.request('MKCOL', url, merge_options(headers, {}), null, 'text', callback);
+    return this.request('MKCOL', url, merge_options(headers, {}), null, 'text/xml; charset=UTF-8', callback);
   },
 
   DELETE: function(url, callback, headers) {
-    return this.request('DELETE', url, merge_options(headers, {}), null, 'text', callback);
+    return this.request('DELETE', url, merge_options(headers, {}), null, 'text/xml; charset=UTF-8', callback);
   },
 
-  PUT: function(url, data, callback, headers) {
-    return this.request('PUT', url, merge_options(headers, {}), data, 'text', callback);
+  PUT: function(url, data, type, callback, headers) {
+    return this.request('PUT', url, merge_options(headers, {}), data, type ? type : 'text/xml; charset=UTF-8', callback);
   },
 
   MOVE:  function(url, destinationUrl, callback, headers) {
-    return this.request('MOVE', url, merge_options(headers, {Destination: destinationUrl}), null, 'text', callback);
+    return this.request('MOVE', url, merge_options(headers, {Destination: destinationUrl}), null, 'text/xml; charset=UTF-8', callback);
   },
 
   request: function(verb, url, headers, data, type, callback) {
@@ -35,7 +35,7 @@ var WebDAV = {
     xhr.withCredentials = this.useCredentials;
     var body = function() {
       var b = xhr.responseText;
-      if (type == 'xml') {
+      if (verb == 'PROPFIND') {
         var xml = xhr.responseXML;
         if(xml) {
           b = xml.firstChild.nextSibling ? xml.firstChild.nextSibling : xml.firstChild;
@@ -57,7 +57,7 @@ var WebDAV = {
       };
     }
     xhr.open(verb, url, !!callback);
-    xhr.setRequestHeader("Content-Type", "text/xml; charset=UTF-8");
+    xhr.setRequestHeader("Content-Type", type ? type : "text/xml; charset=UTF-8");
     for (var header in headers) {
       xhr.setRequestHeader(header, headers[header]);
     }
@@ -101,9 +101,9 @@ WebDAV.File.prototype.read = function(callback) {
   return WebDAV.GET(this.url, callback, fs.headers);
 };
 
-WebDAV.File.prototype.write = function(data, callback) {
+WebDAV.File.prototype.write = function(data, type, callback) {
   var fs = this._fs;
-  return WebDAV.PUT(this.url, data, callback, fs.headers);
+  return WebDAV.PUT(this.url, data, type, callback, fs.headers);
 };
 
 WebDAV.File.prototype.rm = function(callback) {
