@@ -6,8 +6,8 @@ var WebDAV = {
   useCredentials: false,
   NS: 'DAV:',
 
-  GET: function(url, callback, headers) {
-    return this.request('GET', url, merge_options(headers, {}), null, 'text/xml; charset=UTF-8', callback);
+  GET: function(url, callback, headers, mimetype) {
+    return this.request('GET', url, merge_options(headers, {}), null, mimetype? mimetype : 'text/xml; charset=UTF-8', callback);
   },
 
   PROPFIND: function(url, callback, headers) {
@@ -96,9 +96,9 @@ WebDAV.File = function(fs, href, prop) {
   }
 };
 
-WebDAV.File.prototype.read = function(callback) {
+WebDAV.File.prototype.read = function(callback, mimetype) {
   var fs = this._fs;
-  return WebDAV.GET(this.url, callback, fs.headers);
+  return WebDAV.GET(this.url, callback, fs.headers, mimetype);
 };
 
 WebDAV.File.prototype.write = function(data, type, callback) {
